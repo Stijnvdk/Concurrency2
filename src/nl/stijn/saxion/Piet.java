@@ -15,8 +15,9 @@ public class Piet extends Thread{
     }
 
     public void gaWerken(){
+        Logger.log("[Piet] piet gaat werken");
         try {
-            Thread.sleep(10000);
+            Thread.sleep((int) (Math.random() * 10000));
         } catch (InterruptedException e) {
             e.printStackTrace();
         }

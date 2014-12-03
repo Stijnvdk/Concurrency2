@@ -19,8 +19,5 @@ public class Werkpiet extends Piet {
 
     @Override
     public void run() {
-        while(true){
-
-        }
     }
 }

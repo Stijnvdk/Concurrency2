@@ -18,7 +18,7 @@ public class Main {
 
     public boolean overlegGaande;
 
-    public Semaphore aantalVerzamelpietenSemaphore, aantalWerkpietenSemaphore, aantalZwarteWerkpietenSemaphore, pietMeldZichSemaphore, overlegGaandeSemaphore;
+    public Semaphore aantalVerzamelpietenSemaphore, aantalWerkpietenSemaphore, aantalZwarteWerkpietenSemaphore, pietMeldZichSemaphore, overlegGaandeSemaphore, wachtOpVerzamelOverlegSemaphore, overlegSemaphore;
 
 
     public static void main (String[] args){
@@ -43,6 +43,12 @@ public class Main {
 
         // Is er een overleg gaande semaphore
         overlegGaandeSemaphore = new Semaphore(1, true);
+
+        // Verzamelpieten wachten tot ze worden geroepen door Sint om te gaan overleggen
+        wachtOpVerzamelOverlegSemaphore = new Semaphore(0, true);
+
+        // Semaphore voor tijdens een overleg
+        overlegSemaphore = new Semaphore(0, true);
     }
 
     public void startMain(){
@@ -60,9 +66,14 @@ public class Main {
         }
 
         for (int i = 0; i < AANTAL_VERZAMELPIETEN; i++){
-            pieten.add(new Verzamelpiet(this));
+            pieten.add(new VerzamelPiet(this));
         }
 
+        sint.start();
+
+        for (Piet piet: pieten){
+            piet.start();
+        }
 
 
     }

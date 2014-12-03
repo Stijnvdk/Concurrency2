@@ -39,17 +39,11 @@ public class Sint extends Thread {
             lockAdministratie();
 
             if (kanVerzamelOverlegPlaatsvinden()){
-                // neem 1 zwarte werkpiet, de rest gaat weer werken
-                // neem alle verzamelpieten
-                releaseAdministratie();
-                // ga overleggen
+               gaVerzamelOverleggen();
             } else if (kanWerkOverlegPlaatsvinden()) {
-                // Neem 3 werkpieten
-                releaseAdministratie();
-                // ga vergaderen
+                gaWerkOverleggen();
             }
             releaseAdministratie();
-            sharedMain.pietMeldZichSemaphore.release();
         }
     }
 
@@ -57,8 +51,29 @@ public class Sint extends Thread {
         return sharedMain.aantalVerzamelpieten >= Main.AANTAL_VERZAMELPIETEN_OVERLEG && sharedMain.aantalZwarteWerkpieten >= Main.AANTAL_ZWARTE_WERKPIETEN_OVERLEG;
     }
 
+    private void gaVerzamelOverleggen(){
+        // neem 1 zwarte werkpiet, de rest gaat weer werken
+
+        // neem alle verzamelpieten
+        int aantalVerzamelpietenVoorOverleg = sharedMain.aantalVerzamelpieten;
+        sharedMain.wachtOpVerzamelOverlegSemaphore.release(aantalVerzamelpietenVoorOverleg);
+        releaseAdministratie();
+
+        // Het overleg begint, alle pieten die hierbij horen staan nu op de overlegSemaphore te wachten
+        startOverleg(OverlegType.VERZAMEL);
+
+        // Sint laat alle pieten in het overleg weer vrij
+        sharedMain.overlegSemaphore.release(aantalVerzamelpietenVoorOverleg + 1);
+    }
+
     private boolean kanWerkOverlegPlaatsvinden() {
         return sharedMain.aantalWerkpieten >= 3;
+    }
+
+    private void gaWerkOverleggen(){
+        // Neem 3 werkpieten
+        releaseAdministratie();
+        startOverleg(OverlegType.WERK);
     }
 
     /**
@@ -79,12 +94,22 @@ public class Sint extends Thread {
         sharedMain.aantalVerzamelpietenSemaphore.release();
     }
 
+    /**
+     * Start een overleg van een bepaald type. Werkoverleggen duren langer want werkpieten zijn koppig (en het levert een leukere simulatie op)
+     * Eerst wordt het overleg gaande op true gezet
+     * daarna gaat Sint overleggen
+     * daarna wordt iederen weer los gelaten uit het overleg
+     * @param type
+     */
     private void startOverleg(OverlegType type){
+        sharedMain.overlegGaandeSemaphore.acquireUninterruptibly();
+        sharedMain.overlegGaande = true;
+        sharedMain.overlegGaandeSemaphore.release();
 
+        Logger.log("[Sint] Starten met " + type.getType());
         try {
             switch (type) {
                 case WERK:
-
                     Thread.sleep((int) (Math.random() * 2000));
                     break;
                 case VERZAMEL:
@@ -94,6 +119,10 @@ public class Sint extends Thread {
         } catch (InterruptedException e){
             e.printStackTrace();
         }
+
+        sharedMain.overlegGaandeSemaphore.acquireUninterruptibly();
+        sharedMain.overlegGaande = false;
+        sharedMain.overlegGaandeSemaphore.release();
     }
 
 }
